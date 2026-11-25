@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEKATA — Bawaslu Kabupaten Bojonegoro</title>
+    <link rel="icon" type="image/png" href="assets/img/logo-bawaslu.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body class="bg-[#F6F7F9] text-slate-800 antialiased selection:bg-rose-100 selection:text-rose-900">
+
+    <!-- INSTITUTIONAL TOP ACCENT STRIPE -->
+    <div class="bawaslu-top-stripe no-print"></div>
+
+    <!-- PRESENTATION MODE EXIT BAR -->
+    <div id="presentationExitBar" class="hidden bg-[#0F172A] text-white px-6 py-2.5 items-center justify-between border-b border-amber-400/30 no-print">
+        <div class="flex items-center gap-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-rose-800 text-amber-300 font-bold uppercase tracking-wider">Mode Paparan Pleno</span>
+            <span>Bawaslu Kabupaten Bojonegoro • Tahun Anggaran <strong id="presTaLabel">2026</strong></span>
+        </div>
+        <button onclick="togglePresentationMode()" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="minimize-2" class="w-3.5 h-3.5"></i> Keluar Mode Paparan
+        </button>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[100] space-y-2 pointer-events-none no-print"></div>
+
+    <!-- KOP SURAT RESMI (HANYA TAMPIL SAAT DICETAK / PRINT PDF) -->
+    <div class="print-only mb-6 pb-4 border-b-4 border-double border-slate-900">
+        <div class="flex items-center justify-between gap-4">
+            <div class="w-20 h-20 flex items-center justify-center shrink-0">
+                <img src="assets/img/logo-bawaslu.png" alt="Logo Bawaslu Bojonegoro" class="w-full h-full object-contain">
+            </div>
+            <div class="text-center flex-1">
+                <p class="text-sm font-bold uppercase tracking-wider">Badan Pengawas Pemilihan Umum</p>
+                <p class="text-lg font-extrabold uppercase tracking-wide">Kabupaten Bojonegoro</p>
+                <p class="text-[11px] text-slate-700 mt-0.5">Jl. Pahlawan No. 7, Kadipaten, Kec. Bojonegoro, Kabupaten Bojonegoro, Jawa Timur 62111</p>
+                <p class="text-[10px] text-slate-600">Laman: bojonegoro.bawaslu.go.id • Pos-el: sekretariat@bojonegoro.bawaslu.go.id</p>
+            </div>
+            <div id="printTaBadge" class="w-20 text-right font-mono text-[10px] text-slate-600 font-bold">
+                TA 2026
+            </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-300 flex items-center justify-between">
+            <p id="printReportTitle" class="text-sm font-bold uppercase">LAPORAN REALISASI ANGGARAN DAN KEGIATAN (RENJA)</p>
+            <span id="printTimestamp" class="text-[11px] font-mono"></span>
+        </div>
+    </div>
+
+    <div class="flex h-[calc(100vh-3px)] overflow-hidden">
+        <!-- SIDEBAR NAVIGASI -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transition-transform duration-200 lg:static lg:translate-x-0 -translate-x-full flex flex-col no-print">
+            <div class="h-16 px-5 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg logo-badge p-1 flex items-center justify-center shrink-0 border border-slate-200/80 shadow-xs">
+                        <img src="assets/img/logo-bawaslu.png" alt="Logo Bawaslu Bojonegoro" class="w-full h-full object-contain">
+                    </div>
+                    <div class="leading-tight">
+                        <span class="font-bold text-slate-900 text-sm tracking-tight block">SEKATA</span>
+                        <span class="text-[11px] text-rose-900 font-semibold block">Bawaslu Kab. Bojonegoro</span>
+                    </div>
+                </div>
+                <button id="closeSidebar" type="button" aria-label="Tutup menu navigasi" class="lg:hidden text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Menu List -->
+            <nav class="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Menu Utama SEKATA">
+                <div class="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Ringkasan & Anggaran</div>
+                
+                <button id="navDashboardBtn" type="button" onclick="switchTab('dashboard')" class="nav-item active w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium rounded-lg transition-colors" data-tab="dashboard">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    <span id="navDashboardLabel">Ikhtisar Eksekutif</span>
+                </button>
+
+                <button id="navRenjaBtn" type="button" onclick="switchTab('renja')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="renja">
+                    <i data-lucide="table-2" class="w-4 h-4"></i>
+                    <span>Data RENJA & Revisi POK</span>
+                </button>
+
+                <button id="navApprovalBtn" type="button" onclick="switchTab('approval')" class="nav-item w-full flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="approval">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="check-square" class="w-4 h-4"></i>
+                        <span>Persetujuan Perubahan</span>
+                    </div>
+                    <span id="badgeApproval" class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">0</span>
+                </button>
+
+                <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Musyawarah & Pleno</div>
+
+                <button id="navAspirasiBtn" type="button" onclick="switchTab('aspirasi')" class="nav-item w-full flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="aspirasi">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="lightbulb" class="w-4 h-4"></i>
+                        <span>Pojok Aspirasi & Usulan</span>
+                    </div>
+                    <span id="badgeAspirasi" class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">0</span>
+                </button>
+
+                <button id="navPlenoBtn" type="button" onclick="switchTab('pleno')" class="nav-item w-full flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="pleno">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="file-signature" class="w-4 h-4"></i>
+                        <span>Keputusan Pleno</span>
+                    </div>
+                    <span id="badgePleno" class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">0</span>
+                </button>
+
+                <button id="navJadwalBtn" type="button" onclick="switchTab('jadwal')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="jadwal">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    <span>Jadwal Kegiatan</span>
+                </button>
+
+                <div id="navAdminGroupLabel" class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Administrasi & Cadangan</div>
+
+                <button id="navUsersBtn" type="button" onclick="switchTab('users')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="users">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Manajemen Pengguna</span>
+                </button>
+
+                <button id="navTautanBtn" type="button" onclick="switchTab('tautan')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="tautan">
+                    <i data-lucide="grid" class="w-4 h-4"></i>
+                    <span>Portal & Backup Data</span>
+                </button>
+
+                <button id="navLogsBtn" type="button" onclick="switchTab('logs')" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium rounded-lg text-slate-600 hover:bg-slate-100/70 transition-colors" data-tab="logs">
+                    <i data-lucide="history" class="w-4 h-4"></i>
+                    <span>Audit Trail & Log Email</span>
+                </button>
+            </nav>
+
+            <!-- Active User Identity & Role Simulation Panel -->
+            <div class="p-3.5 border-t border-slate-200 bg-slate-50 space-y-2.5">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                        <p id="activeUserRoleLabel" class="text-xs font-semibold text-slate-900 truncate">Administrator Sistem</p>
+                        <p id="activeUserEmail" class="text-[11px] font-mono text-slate-500 truncate">sekretariat@bojonegoro.bawaslu.go.id</p>
+                    </div>
+                    <span id="activeAuthModeBadge" class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">Lokal</span>
+                </div>
+
+                <details class="pt-2 border-t border-slate-200/80">
+                    <summary class="text-[11px] font-semibold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center justify-between select-none">
+                        <span>Uji Simulasi Peran</span>
+                        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-slate-400"></i>
+                    </summary>
+                    <div class="space-y-2 mt-2.5">
+                        <div>
+                            <label for="roleSelector" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Peran & Kewenangan</label>
+                            <select id="roleSelector" onchange="changeRole()" class="w-full text-xs font-medium bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:border-[#881337]">
+                                <option value="Admin">Administrator Sistem</option>
+                                <option value="Pimpinan">Pimpinan (Ketua / Anggota)</option>
+                                <option value="Kordiv">Koordinator Divisi (Kordiv)</option>
+                                <option value="PIC">PIC / Staf Pelaksana</option>
+                                <option value="Operator">Operator Data RENJA</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="activeDivisiScope" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Batasan Divisi</label>
+                            <select id="activeDivisiScope" onchange="changeRole()" class="w-full text-xs font-medium bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:border-[#881337]">
+                                <option value="ALL">Semua Divisi (Akses Penuh)</option>
+                                <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                                <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                                <option value="SDMO & Diklat">SDMO & Diklat</option>
+                                <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                                <option value="Sekretariat">Sekretariat</option>
+                            </select>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/70">
+                    <button type="button" onclick="resetDemoData()" class="text-slate-500 hover:text-rose-700 flex items-center gap-1 transition-colors">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Reset Data
+                    </button>
+                    <button type="button" onclick="handleLogout()" class="text-slate-700 hover:text-[#881337] font-semibold flex items-center gap-1 transition-colors">
+                        <i data-lucide="log-out" class="w-3 h-3"></i> Keluar
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Top Bar -->
+            <header class="min-h-16 py-2.5 lg:py-0 lg:h-16 bg-white border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between gap-2 shrink-0 no-print">
+                <div class="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                    <button id="openSidebar" type="button" aria-label="Buka menu navigasi" class="lg:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 shrink-0">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <div class="hidden sm:flex items-center gap-2 text-[11px] text-slate-400">
+                            <span>Bawaslu Kabupaten Bojonegoro</span>
+                            <span>/</span>
+                            <span id="breadcrumbCurrent" class="text-slate-600 font-medium">Ikhtisar Eksekutif</span>
+                        </div>
+                        <h1 id="pageTitle" class="font-bold text-slate-900 text-xl sm:text-[22px] leading-tight truncate">Ikhtisar Eksekutif Kegiatan & Anggaran</h1>
+                    </div>
+                </div>
+
+                <!-- Right Toolbar: Tahun Anggaran, Mode Paparan, Dark Mode, Role -->
+                <div class="flex items-center gap-2.5">
+                    <select id="tahunAnggaranSelector" aria-label="Pilih Tahun Anggaran" onchange="changeTahunAnggaran()" title="Pilih Tahun Anggaran" class="font-mono text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300 rounded-lg px-2.5 py-1.5">
+                        <option value="2026">TA 2026</option>
+                        <option value="2025">TA 2025 (Arsip)</option>
+                        <option value="2027">TA 2027 (Rencana)</option>
+                    </select>
+
+                    <button type="button" onclick="togglePresentationMode()" title="Mode Paparan Layar Penuh Rapat Pleno" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700 transition-colors">
+                        <i data-lucide="presentation" class="w-3.5 h-3.5 text-rose-800"></i>
+                        <span class="hidden xl:inline">Paparan</span>
+                    </button>
+
+                    <button type="button" onclick="toggleDarkMode()" id="btnDarkMode" aria-label="Ganti Tema Terang atau Gelap" title="Ganti Tema Terang / Gelap" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors">
+                        <i data-lucide="moon" class="w-4 h-4"></i>
+                    </button>
+
+                    <div id="roleIndicator" class="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md bg-rose-50/70 border border-rose-200/80 text-xs font-medium text-rose-950">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-700"></span>
+                        <span>Administrator Sistem</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6">
+
+                <!-- WORKSPACE OFFLINE INDICATOR -->
+                <div id="workspaceOfflineBanner" class="workspace-offline-bar is-hidden no-print" role="status" aria-live="polite">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <i data-lucide="wifi-off" class="w-4 h-4 shrink-0"></i>
+                        <span>Koneksi internet terputus — perubahan data sementara disimpan lokal di peramban hingga jaringan kembali tersambung.</span>
+                    </div>
+                    <span class="font-mono text-[10px] font-semibold px-2 py-0.5 rounded border border-current shrink-0">MODE OFFLINE</span>
+                </div>
+
+                <!-- 1. IKHTISAR EKSEKUTIF (DASHBOARD) -->
+                <section id="tab-dashboard" class="tab-panel space-y-6">
+                    <!-- ROLE-TAILORED COMMAND COCKPIT -->
+                    <div id="roleWorkspaceSection" class="role-workspace-card no-print">
+                        <h2 class="font-bold text-slate-900">Ikhtisar Peran &amp; Prioritas Kerja SEKATA</h2>
+                    </div>
+                    <!-- Early Warning Alert Banner -->
+                    <div id="earlyWarningBanner" class="hidden p-4 rounded-xl bg-amber-50 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                            <div class="text-xs">
+                                <p class="font-bold text-amber-900">Peringatan Dini Deviasi Anggaran (Potensi Geser)</p>
+                                <p id="earlyWarningText" class="text-amber-800 mt-0.5"></p>
+                            </div>
+                        </div>
+                        <button onclick="switchTab('renja')" class="px-3 py-1.5 rounded-lg bg-amber-900 text-white text-xs font-semibold shrink-0 hover:bg-amber-800">
+                            Tinjau Pos Kegiatan
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs">
+                            <div class="flex items-center justify-between text-slate-500 mb-2">
+                                <span class="text-xs font-medium">Total Pagu RENJA</span>
+                                <i data-lucide="briefcase" class="w-4 h-4 text-rose-800"></i>
+                            </div>
+                            <p id="kpiPagu" class="kpi-metric font-mono font-semibold text-xl text-slate-900 tabular-nums">Rp 0</p>
+                            <p id="kpiCountKegiatan" class="text-[11px] text-slate-500 mt-1.5">0 Pos Kegiatan Terdaftar</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs">
+                            <div class="flex items-center justify-between text-slate-500 mb-2">
+                                <span class="text-xs font-medium">Realisasi Terserap (SP2D)</span>
+                                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+                            </div>
+                            <p id="kpiSerapan" class="kpi-metric font-mono font-semibold text-xl text-emerald-700 tabular-nums">Rp 0</p>
+                            <div class="flex items-center gap-2 mt-1.5">
+                                <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div id="kpiProgressBar" class="h-full bg-emerald-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span id="kpiPersen" class="font-mono text-[11px] font-semibold text-emerald-700">0%</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs">
+                            <div class="flex items-center justify-between text-slate-500 mb-2">
+                                <span class="text-xs font-medium">Sisa Pagu Anggaran</span>
+                                <i data-lucide="wallet" class="w-4 h-4 text-sky-600"></i>
+                            </div>
+                            <p id="kpiSisa" class="kpi-metric font-mono font-semibold text-xl text-slate-900 tabular-nums">Rp 0</p>
+                            <p class="text-[11px] text-slate-500 mt-1.5">Saldo efektif belum terserap</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs">
+                            <div class="flex items-center justify-between text-slate-500 mb-2">
+                                <span class="text-xs font-medium">Tindak Lanjut Pleno</span>
+                                <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
+                            </div>
+                            <p id="kpiPlenoAktif" class="kpi-metric font-mono font-semibold text-xl text-slate-900">0 Aktif</p>
+                            <p class="text-[11px] text-amber-700 font-medium mt-1.5">Pengingat Email & Eskalasi Pimpinan</p>
+                        </div>
+                    </div>
+
+                    <!-- KURVA-S RPD VS REALISASI & STATUS DOUGHNUT -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-8 bg-white p-6 rounded-xl border border-slate-200/90 shadow-2xs">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900">Kurva-S Realisasi Anggaran (Target RPD vs Aktual)</h3>
+                                    <p class="text-xs text-slate-500">Perbandingan kumulatif Rencana Penarikan Dana (RPD) dengan realisasi bulanan</p>
+                                </div>
+                                <span class="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Kumulatif (%)</span>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="kurvaSChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-4 bg-white p-6 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">Distribusi Status RENJA</h3>
+                                <p class="text-xs text-slate-500 mb-4">Klasifikasi status pelaksanaan kegiatan</p>
+                            </div>
+                            <div class="h-44 flex items-center justify-center">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                            <div id="statusBreakdownList" class="space-y-1.5 mt-4 pt-3 border-t border-slate-100"></div>
+                        </div>
+                    </div>
+
+                    <!-- PERBANDINGAN PER DIVISI & KELOMPOK ANGGARAN -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200/90 shadow-2xs">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900">Pagu & Serapan per Divisi</h3>
+                                    <p class="text-xs text-slate-500">Rekapitulasi serapan anggaran tiap divisi</p>
+                                </div>
+                                <span class="text-[11px] font-mono text-slate-400">Juta Rupiah</span>
+                            </div>
+                            <div class="h-56">
+                                <canvas id="budgetChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-bold text-sm text-slate-900">Rekap Kelompok Anggaran</h3>
+                                    <span class="text-[11px] text-slate-400">Operasional vs Non-Operasional</span>
+                                </div>
+                                <div id="kelompokAnggaranSummary" class="divide-y divide-slate-100"></div>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-bold text-xs text-slate-900">Tindak Lanjut Pleno Aktif</span>
+                                    <button onclick="switchTab('pleno')" class="text-[11px] font-semibold text-rose-800 hover:underline">Buka Register</button>
+                                </div>
+                                <div id="dashboardPlenoList" class="divide-y divide-slate-100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. DATA RENJA & REALISASI -->
+                <section id="tab-renja" class="tab-panel hidden space-y-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200/90 flex flex-col xl:flex-row gap-3 justify-between items-center no-print">
+                        <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                            <div class="relative flex-1 sm:w-52">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                                <input type="text" id="searchRenja" aria-label="Cari kode atau kegiatan RENJA" onkeyup="renderRenjaTable()" placeholder="Cari kode atau kegiatan..."
+                                    class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-[#881337]">
+                            </div>
+                            <select id="filterDivisi" aria-label="Filter berdasarkan divisi" onchange="renderRenjaTable()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700">
+                                <option value="ALL">Semua Divisi</option>
+                                <option value="SDMO & Diklat">SDMO & Diklat</option>
+                                <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                                <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                                <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                                <option value="Sekretariat">Sekretariat</option>
+                            </select>
+                            <select id="filterStatus" aria-label="Filter berdasarkan status kegiatan" onchange="renderRenjaTable()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700">
+                                <option value="ALL">Semua Status</option>
+                                <option value="BERJALAN">BERJALAN</option>
+                                <option value="TERLAKSANA DAN TERSERAP">TERLAKSANA DAN TERSERAP</option>
+                                <option value="TERLAKSANA BELUM TERSERAP">TERLAKSANA BELUM TERSERAP</option>
+                                <option value="BELUM TERLAKSANA">BELUM TERLAKSANA</option>
+                                <option value="POTENSI GESER">POTENSI GESER</option>
+                            </select>
+                            <button onclick="toggleTableDensity()" id="btnDensity" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors" title="Ubah kerapatan baris tabel">
+                                <i data-lucide="rows-3" class="w-3.5 h-3.5"></i>
+                                <span>Ringkas</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto justify-end">
+                            <button onclick="exportRenjaExcel()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors">
+                                <i data-lucide="file-down" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                XLSX
+                            </button>
+                            <button onclick="printOfficialReport('LAPORAN REALISASI ANGGARAN DAN KEGIATAN (RENJA)')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors">
+                                <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-600"></i>
+                                Cetak Kop & QR
+                            </button>
+                            <button id="btnImportExcel" onclick="openModal('modalImport')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors">
+                                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                Impor
+                            </button>
+                            <button id="btnAddRenja" onclick="openModal('modalRenja')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#881337] hover:bg-[#700F2D] rounded-lg transition-colors">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                Tambah Kegiatan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs">
+                        <div class="overflow-x-auto max-h-[65vh]">
+                            <table id="renjaTable" class="w-full text-left border-collapse sticky-table">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                        <th class="py-3 px-4">Kode</th>
+                                        <th class="py-3 px-4">Uraian Kegiatan</th>
+                                        <th class="py-3 px-4">Divisi / Kelompok</th>
+                                        <th class="py-3 px-4">Jadwal</th>
+                                        <th class="py-3 px-4 text-right">Pagu (Rp)</th>
+                                        <th class="py-3 px-4 text-right">Serapan & Progres</th>
+                                        <th class="py-3 px-4 text-right">Sisa Pagu</th>
+                                        <th class="py-3 px-4">Tahap Keuangan</th>
+                                        <th class="py-3 px-4">Status</th>
+                                        <th class="py-3 px-4 text-center no-print">Tindakan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="renjaTableBody" class="divide-y divide-slate-200/70 text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- RIWAYAT REVISI PAGU / POK -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/90 space-y-3 no-print">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-900">Riwayat Pergeseran Anggaran & Revisi POK/DIPA</h3>
+                                <p class="text-[11px] text-slate-500">Catatan histori perubahan pagu semula menjadi pagu revisi beserta nomor pengesahan.</p>
+                            </div>
+                            <span class="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600">Audit POK</span>
+                        </div>
+                        <div id="revisiPaguHistoryList" class="divide-y divide-slate-100 text-xs"></div>
+                    </div>
+                </section>
+
+                <!-- 3. PERSETUJUAN PERUBAHAN -->
+                <section id="tab-approval" class="tab-panel hidden space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="font-bold text-slate-900">Verifikasi & Persetujuan Perubahan Data</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Tinjau lampiran dokumen SPJ sebelum memberikan persetujuan perubahan serapan dan tahapan SP2D.</p>
+                        </div>
+                        <span class="text-xs text-slate-600">
+                            Kewenangan Eksekusi: <strong class="text-slate-800">Pimpinan / Kordiv / Admin</strong>
+                        </span>
+                    </div>
+                    <div id="approvalListContainer" class="space-y-3"></div>
+                </section>
+
+                <!-- 4. POJOK ASPIRASI & USULAN JAJARAN (CROWDSOURCING PEMIKIRAN) -->
+                <section id="tab-aspirasi" class="tab-panel hidden space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="font-bold text-slate-900">Pojok Aspirasi, Pemikiran Jajaran & Bahan Rapat Pleno</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Ruang partisipatif bagi seluruh staf dan divisi untuk menuangkan gagasan, kendala lapangan, dan usulan pergeseran anggaran.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="openRangkumanDimPleno()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                                Rangkuman Matriks Pleno (DIM)
+                            </button>
+                            <button onclick="openModal('modalAspirasi')" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#881337] hover:bg-[#700F2D] rounded-lg transition-colors">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                Tuangkan Pemikiran / Usulan
+                            </button>
+                        </div>
+                    </div>
+                    <div id="aspirasiCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </section>
+
+                <!-- 5. KEPUTUSAN PLENO -->
+                <section id="tab-pleno" class="tab-panel hidden space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+                        <div>
+                            <h2 class="font-bold text-slate-900">Register Keputusan Rapat Pleno & Tindak Lanjut</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Dilengkapi nomor sidang pleno, generator Berita Acara resmi, pengingat email H-30/H-7, dan unggah dokumen bukti.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="openBeritaAcaraPleno()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                                Pratinjau Berita Acara Pleno
+                            </button>
+                            <button onclick="printOfficialReport('REKAPITULASI TINDAK LANJUT KEPUTUSAN RAPAT PLENO')" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors">
+                                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                Cetak Register Pleno
+                            </button>
+                            <button id="btnAddPleno" onclick="openModal('modalPleno')" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#881337] hover:bg-[#700F2D] rounded-lg transition-colors">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                Catat Keputusan Pleno
+                            </button>
+                        </div>
+                    </div>
+                    <div id="plenoCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </section>
+
+                <!-- 6. JADWAL KEGIATAN -->
+                <section id="tab-jadwal" class="tab-panel hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-8 bg-white p-6 rounded-xl border border-slate-200/90">
+                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900">Agenda Kegiatan Terjadwal</h3>
+                                    <p class="text-xs text-slate-500">Daftar kegiatan RENJA dengan tanggal pelaksanaan definitif</p>
+                                </div>
+                                <span id="jadwalTaBadge" class="font-mono text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-700">TA 2026</span>
+                            </div>
+                            <div id="scheduledEventsList" class="divide-y divide-slate-100"></div>
+                        </div>
+
+                        <div class="lg:col-span-4 bg-white p-6 rounded-xl border border-amber-200">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
+                                <h3 class="font-bold text-sm text-slate-900">Belum Memiliki Tanggal</h3>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                                Pos anggaran rutin atau kegiatan dari spreadsheet dengan keterangan tanggal kosong maupun teks <code class="px-1 py-0.5 bg-slate-100 rounded text-slate-800">"belum"</code>.
+                            </p>
+                            <div id="unscheduledEventsList" class="divide-y divide-amber-100"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. MANAJEMEN PENGGUNA (CRUD USER ADMIN) -->
+                <section id="tab-users" class="tab-panel hidden space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="font-bold text-slate-900">Manajemen Pengguna & Hak Akses Pegawai</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Pengelolaan akun pimpinan, koordinator divisi, staf PIC, dan operator sekretariat.</p>
+                        </div>
+                        <button onclick="openModal('modalUser')" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#881337] hover:bg-[#700F2D] rounded-lg transition-colors">
+                            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                            Tambah Pegawai / Akun
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                                        <th class="py-3 px-4">NIP / Nama Lengkap</th>
+                                        <th class="py-3 px-4">Jabatan</th>
+                                        <th class="py-3 px-4">Email Kedinasan</th>
+                                        <th class="py-3 px-4">Peran & Divisi</th>
+                                        <th class="py-3 px-4">Status</th>
+                                        <th class="py-3 px-4 text-center">Tindakan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="divide-y divide-slate-200/70"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 8. PORTAL APLIKASI INTERNAL & BACKUP/RESTORE JSON -->
+                <section id="tab-tautan" class="tab-panel hidden space-y-6">
+                    <div>
+                        <h2 class="font-bold text-slate-900">Direktori Layanan & Aplikasi Internal Bawaslu</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Tautan cepat menuju sistem informasi pengawasan, penanganan pelanggaran, sengketa, dan kesekretariatan.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <button type="button" onclick="showToast('Portal SIPS Bawaslu RI (eksternal) dibuka pada jaringan internal lembaga.', 'info')" class="text-left p-5 rounded-xl border border-slate-200/90 hover:border-[#881337]/50 transition-all flex items-start gap-3.5 bg-white">
+                            <div class="w-9 h-9 rounded-lg bg-rose-900 text-amber-300 flex items-center justify-center shrink-0">
+                                <i data-lucide="scale" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-900">SIPS Bawaslu RI</h3>
+                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Sistem Informasi Penyelesaian Sengketa Proses Pemilu & Pemilihan.</p>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="showToast('Portal SigapLapor (eksternal) dibuka pada jaringan internal lembaga.', 'info')" class="text-left p-5 rounded-xl border border-slate-200/90 hover:border-[#881337]/50 transition-all flex items-start gap-3.5 bg-white">
+                            <div class="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
+                                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-900">SigapLapor</h3>
+                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Sistem Informasi Penanganan Pelanggaran & Laporan Masyarakat.</p>
+                            </div>
+                        </button>
+
+                        <a href="verifikasi.html" target="_blank" rel="noopener" class="p-5 rounded-xl border border-slate-200/90 hover:border-[#881337]/50 transition-all flex items-start gap-3.5 bg-white">
+                            <div class="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-900">Portal Validasi QR-Code</h3>
+                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Halaman pengecekan keaslian dokumen laporan fisik yang dicetak dari SEKATA.</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- BACKUP & RESTORE MANDIRI -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="font-bold text-slate-900">Pencadangan & Pemulihan Data Sistem (.JSON)</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Unduh salinan lengkap seluruh database lokal (RENJA, Aspirasi, Keputusan Pleno, Revisi POK, dan Pengguna) untuk arsip aman.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button onclick="downloadJsonBackup()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold">
+                                <i data-lucide="download-cloud" class="w-4 h-4 text-amber-400"></i>
+                                Unduh Backup (.JSON)
+                            </button>
+                            <label class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-semibold cursor-pointer">
+                                <i data-lucide="upload-cloud" class="w-4 h-4 text-rose-800"></i>
+                                Pulihkan Cadangan
+                                <input type="file" accept=".json" onchange="restoreJsonBackup(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 9. AUDIT TRAIL & LOG EMAIL -->
+                <section id="tab-logs" class="tab-panel hidden space-y-4">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/90">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h2 class="font-bold text-slate-900">Log Aktivitas & Riwayat Notifikasi Email</h2>
+                                <p class="text-xs text-slate-500">Rekam jejak pengiriman notifikasi email otomatis & eskalasi pimpinan (Kanal resmi: Email SMTP).</p>
+                            </div>
+                            <span class="font-mono text-[11px] px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">SMTP Gateway: Aktif</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                                        <th class="py-2.5 px-4">Timestamp</th>
+                                        <th class="py-2.5 px-4">Pemicu / Aktivitas</th>
+                                        <th class="py-2.5 px-4">Alamat Tujuan / Aktor</th>
+                                        <th class="py-2.5 px-4">Referensi</th>
+                                        <th class="py-2.5 px-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logsTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BLOK TANDA TANGAN PENGESAHAN & QR VERIFIKASI (HANYA TAMPIL SAAT PRINT) -->
+                <div class="print-only mt-8 pt-6 border-t border-slate-300">
+                    <div class="grid grid-cols-12 gap-6 items-end text-xs">
+                        <div class="col-span-4 text-center">
+                            <p>Mengetahui,</p>
+                            <p class="font-bold uppercase">Ketua Bawaslu Kabupaten Bojonegoro</p>
+                            <div class="h-20"></div>
+                            <p class="font-bold underline">( .................................................... )</p>
+                        </div>
+                        <div class="col-span-4 flex flex-col items-center justify-center text-center">
+                            <div id="printQrCode" class="p-1.5 border border-slate-300 bg-white"></div>
+                            <p class="font-mono text-[9px] text-slate-600 mt-1">Pindai QR untuk Validasi Keaslian</p>
+                            <p id="printQrHash" class="font-mono text-[8px] text-slate-500"></p>
+                        </div>
+                        <div class="col-span-4 text-center">
+                            <p id="printDateSign">Bojonegoro, .............................. 2026</p>
+                            <p class="font-bold uppercase">Kepala Sekretariat / PPK</p>
+                            <div class="h-20"></div>
+                            <p class="font-bold underline">( .................................................... )</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL TUANG PEMIKIRAN / POJOK ASPIRASI -->
+    <div id="modalAspirasi" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Tuangkan Pemikiran, Evaluasi, atau Usulan Pleno</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalAspirasi')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="saveAspirasi(event)" class="space-y-3.5 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nama Pengusul *</label>
+                        <input type="text" id="aspPengusul" required placeholder="Nama Pegawai / Pejabat" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Unit / Divisi *</label>
+                        <select id="aspDivisi" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                            <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                            <option value="SDMO & Diklat">SDMO & Diklat</option>
+                            <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                            <option value="Sekretariat">Sekretariat</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kategori Usulan *</label>
+                    <select id="aspKategori" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                        <option value="Pergeseran Anggaran">Usulan Pergeseran Anggaran / Revisi POK</option>
+                        <option value="Kendala Lapangan">Kendala Pelaksanaan Lapangan</option>
+                        <option value="Perbaikan Teknis">Saran Perbaikan Teknis & Administrasi</option>
+                        <option value="Inovasi Pengawasan">Inovasi & Strategi Pengawasan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Judul Pokok Pemikiran / Usulan *</label>
+                    <input type="text" id="aspJudul" required placeholder="Contoh: Optimalisasi sisa anggaran rapat untuk supervisi kecamatan..." class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Uraian Permasalahan / Latar Belakang *</label>
+                    <textarea id="aspUraian" required rows="2" placeholder="Jelaskan kondisi di lapangan atau alasan perlunya pembahasan..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Rekomendasi Solusi yang Diusulkan *</label>
+                    <textarea id="aspSolusi" required rows="2" placeholder="Tuliskan usulan konkret untuk diputuskan dalam rapat pleno..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalAspirasi')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-[#881337] hover:bg-[#700F2D] text-white font-semibold transition-colors">Kirim Pemikiran</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL RANGKUMAN MATRIKS DIM BAHAN PLENO -->
+    <div id="modalDimPleno" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">Rangkuman Daftar Inventarisasi Masalah (DIM) & Usulan Jajaran</h3>
+                    <p class="text-[11px] text-slate-500">Rekapitulasi otomatis seluruh pemikiran staf & divisi sebagai bahan pengambilan keputusan rapat pleno</p>
+                </div>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalDimPleno')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="dimPlenoContent" class="flex-1 overflow-y-auto space-y-3 text-xs"></div>
+        </div>
+    </div>
+
+    <!-- MODAL REVISI PAGU / PERGESERAN POK -->
+    <div id="modalRevisiPagu" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Catat Revisi Pagu / Pergeseran POK</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalRevisiPagu')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="submitRevisiPagu(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="revRenjaId">
+                <div class="pb-3 border-b border-slate-200">
+                    <p id="revRenjaNama" class="font-semibold text-slate-900"></p>
+                    <p id="revPaguSekarang" class="font-mono text-[11px] text-slate-600 mt-1"></p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nomor Pengesahan Revisi POK *</label>
+                        <input type="text" id="revNomor" required placeholder="POK-REV-02/2026" class="w-full font-mono border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Pagu Baru Setelah Revisi (Rp) *</label>
+                        <input type="number" id="revPaguBaru" required min="0" class="w-full font-mono border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Dasar Pertimbangan Pergeseran Anggaran *</label>
+                    <textarea id="revKeterangan" required rows="2" placeholder="Contoh: Pergeseran efisiensi belanja rapat ke perjalanan dinas supervisi berdasarkan hasil pleno." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalRevisiPagu')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold">Simpan Revisi POK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL BERITA ACARA RAPAT PLENO OTOMATIS -->
+    <div id="modalBeritaAcara" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">Draf Resmi Berita Acara Rapat Pleno</h3>
+                    <p class="text-[11px] text-slate-500">Terisi otomatis dari register keputusan rapat pleno Bawaslu Kabupaten Bojonegoro</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadBeritaAcaraDoc()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh .DOC
+                    </button>
+                    <button type="button" aria-label="Tutup modal" onclick="closeModal('modalBeritaAcara')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="beritaAcaraContent" class="flex-1 overflow-y-auto pt-2 text-xs leading-relaxed text-slate-900 space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH PENGGUNA BARU (ADMIN) -->
+    <div id="modalUser" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Tambah Akun Pegawai / Pejabat</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalUser')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="saveUser(event)" class="space-y-3.5 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">NIP / Nomor Pegawai</label>
+                        <input type="text" id="userNip" placeholder="199001012020121001" class="w-full font-mono border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap & Gelar *</label>
+                        <input type="text" id="userNama" required placeholder="Nama Lengkap, S.H." class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Jabatan *</label>
+                        <input type="text" id="userJabatan" required placeholder="Analis Hukum / Staf Sekretariat" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Email Kedinasan *</label>
+                        <input type="email" id="userEmail" required placeholder="nama@bojonegoro.bawaslu.go.id" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Peran Sistem *</label>
+                        <select id="userRole" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="PIC">PIC / Staf Pelaksana</option>
+                            <option value="Kordiv">Koordinator Divisi (Kordiv)</option>
+                            <option value="Operator">Operator Data RENJA</option>
+                            <option value="Pimpinan">Pimpinan Bawaslu</option>
+                            <option value="Admin">Administrator Sistem</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Unit / Divisi *</label>
+                        <select id="userDivisi" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                            <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                            <option value="SDMO & Diklat">SDMO & Diklat</option>
+                            <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                            <option value="Sekretariat">Sekretariat</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalUser')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-white font-semibold">Simpan Akun</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PRATINJAU DOKUMEN BUKTI (PDF / GAMBAR) -->
+    <div id="modalPreviewDoc" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-3xl w-full p-5 shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
+                <div>
+                    <h3 id="previewDocTitle" class="font-bold text-sm text-slate-900">Pratinjau Dokumen Lampiran</h3>
+                    <p id="previewDocSubtitle" class="text-[11px] text-slate-500"></p>
+                </div>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalPreviewDoc')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="previewDocBody" class="flex-1 overflow-auto bg-slate-50 min-h-[380px] flex items-center justify-center p-3 border-t border-slate-200"></div>
+        </div>
+    </div>
+
+    <!-- MODAL PENYELESAIAN TINDAK LANJUT PLENO + UNGGAH BUKTI -->
+    <div id="modalCompletePleno" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Unggah Bukti & Selesaikan Tindak Lanjut Pleno</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalCompletePleno')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="submitCompletePleno(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="completePlenoId">
+                <div class="pb-3 border-b border-slate-200">
+                    <p class="text-[11px] text-slate-500">Nomor Register Pleno:</p>
+                    <p id="completePlenoLabel" class="font-semibold text-slate-900 mt-0.5"></p>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Catatan / Ringkasan Hasil Tindak Lanjut *</label>
+                    <textarea id="completePlenoCatatan" required rows="2" placeholder="Contoh: Laporan hasil pengawasan telah dikirim melalui E-Office nomor 114/PM.00.02/K.JI-03/11/2026." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Unggah Dokumen Bukti (PDF / JPG / PNG) *</label>
+                    <input type="file" id="completePlenoFile" accept=".pdf,.jpg,.jpeg,.png" required class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 border border-slate-300 rounded-lg p-1.5">
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalCompletePleno')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Simpan & Tandai Selesai</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL IMPOR EXCEL -->
+    <div id="modalImport" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Impor Spreadsheet RENJA (.XLSX / .CSV)</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalImport')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div class="pb-3 border-b border-slate-200 text-slate-600 space-y-1.5">
+                    <p class="font-semibold text-slate-800">Standar Pemetaan Kolom Spreadsheet:</p>
+                    <p class="text-[11px] leading-relaxed">Sistem membaca kolom <code>Kode</code>, <code>Nama Kegiatan</code>, <code>Divisi</code>, <code>Kelompok</code>, <code>Tipe</code>, <code>Tanggal</code>, <code>Pagu</code>, <code>Serapan</code>, <code>Tahap</code>, dan <code>Status</code>.</p>
+                    <button onclick="downloadTemplateExcel()" class="mt-1 inline-flex items-center gap-1.5 text-rose-800 hover:text-rose-950 font-semibold">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh Format Template RENJA (.xlsx)
+                    </button>
+                </div>
+
+                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 hover:border-slate-500 rounded-xl cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                    <i data-lucide="file-spreadsheet" class="w-7 h-7 text-slate-500 mb-2"></i>
+                    <span class="font-semibold text-slate-700">Pilih berkas spreadsheet dari komputer</span>
+                    <span class="text-[11px] text-slate-400 mt-0.5">Mendukung format .xlsx, .xls, dan .csv</span>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" onchange="handleExcelUpload(event)" class="hidden">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH KEGIATAN -->
+    <div id="modalRenja" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Tambah Pos Kegiatan RENJA</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalRenja')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form id="formRenja" onsubmit="saveRenja(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Uraian / Nama Kegiatan *</label>
+                    <input type="text" id="inputNama" required placeholder="Contoh: Rapat Koordinasi Pengawasan..." class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Divisi Pelaksana *</label>
+                        <select id="inputDivisi" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="SDMO & Diklat">SDMO & Diklat</option>
+                            <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                            <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                            <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                            <option value="Sekretariat">Sekretariat</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Kelompok Anggaran *</label>
+                        <select id="inputKelompok" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="Non-Operasional">Anggaran Non-Operasional</option>
+                            <option value="Operasional">Anggaran Operasional</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tipe Kegiatan *</label>
+                        <select id="inputTipe" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="Rapat Biasa">Rapat Biasa</option>
+                            <option value="Perjalanan Dinas">Perjalanan Dinas</option>
+                            <option value="Operasional Rutin">Operasional Rutin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tanggal Pelaksanaan</label>
+                        <input type="date" id="inputTanggal" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Pagu (Rp) *</label>
+                        <input type="number" id="inputPagu" required min="0" value="15000000" class="w-full font-mono border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Serapan (Rp) *</label>
+                        <input type="number" id="inputSerapan" required min="0" value="0" class="w-full font-mono border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tahap Pencairan Keuangan *</label>
+                        <select id="inputTahap" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white">
+                            <option value="Belum Diajukan">Belum Diajukan</option>
+                            <option value="Pengajuan SPJ">Pengajuan SPJ</option>
+                            <option value="Verifikasi BPP">Verifikasi BPP</option>
+                            <option value="Terbit SPM">Terbit SPM</option>
+                            <option value="Cair SP2D">Cair SP2D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Status Kegiatan *</label>
+                        <select id="inputStatus" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white">
+                            <option value="BELUM TERLAKSANA">BELUM TERLAKSANA</option>
+                            <option value="BERJALAN">BERJALAN</option>
+                            <option value="TERLAKSANA DAN TERSERAP">TERLAKSANA DAN TERSERAP</option>
+                            <option value="TERLAKSANA BELUM TERSERAP">TERLAKSANA BELUM TERSERAP</option>
+                            <option value="POTENSI GESER">POTENSI GESER</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalRenja')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-white font-semibold">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PENGAJUAN PERUBAHAN + OVER-BUDGET GUARD + LAMPIRAN SPJ -->
+    <div id="modalEditApproval" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Pembaruan Realisasi & Progres SPJ/SP2D</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalEditApproval')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="submitChangeRequest(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="editRenjaId">
+                <input type="hidden" id="editRenjaPagu">
+                <div class="pb-3 border-b border-slate-200 flex items-center justify-between gap-2">
+                    <div>
+                        <p class="text-[11px] text-slate-500">Pos Kegiatan:</p>
+                        <p id="editRenjaNama" class="font-semibold text-slate-900 mt-0.5"></p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-[10px] text-slate-500">Batas Pagu:</p>
+                        <p id="editRenjaPaguLabel" class="font-mono font-bold text-slate-900"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nominal Serapan Baru (Rp) *</label>
+                        <input type="number" id="editSerapanBaru" required min="0" class="w-full font-mono border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tahap Administrasi Keuangan *</label>
+                        <select id="editTahapBaru" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="Belum Diajukan">Belum Diajukan</option>
+                            <option value="Pengajuan SPJ">Pengajuan SPJ</option>
+                            <option value="Verifikasi BPP">Verifikasi BPP</option>
+                            <option value="Terbit SPM">Terbit SPM</option>
+                            <option value="Cair SP2D">Cair SP2D</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Status Pelaksanaan Kegiatan *</label>
+                    <select id="editStatusBaru" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                        <option value="BERJALAN">BERJALAN</option>
+                        <option value="TERLAKSANA DAN TERSERAP">TERLAKSANA DAN TERSERAP</option>
+                        <option value="TERLAKSANA BELUM TERSERAP">TERLAKSANA BELUM TERSERAP</option>
+                        <option value="BELUM TERLAKSANA">BELUM TERLAKSANA</option>
+                        <option value="POTENSI GESER">POTENSI GESER</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Keterangan / Nomor SPM / Dasar Perubahan *</label>
+                    <textarea id="editAlasan" required rows="2" placeholder="Tuliskan nomor SPM/kuitansi SPJ atau alasan perubahan..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Lampiran Dokumen Bukti SPJ (PDF / JPG / PNG)</label>
+                    <input type="file" id="editSpjFile" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 border border-slate-300 rounded-lg p-1.5">
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalEditApproval')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-white font-semibold">Kirim Pembaruan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL KEPUTUSAN PLENO -->
+    <div id="modalPleno" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-sm text-slate-900">Catat Butir Keputusan Rapat Pleno</h3>
+                <button type="button" aria-label="Tutup modal" onclick="closeModal('modalPleno')" class="text-slate-400 hover:text-slate-700 p-1 rounded"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="savePleno(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nomor / Agenda Sidang Pleno *</label>
+                    <input type="text" id="plenoSidang" required value="Pleno Rutin Mingguan #43/2026" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Isi Keputusan / Arahan Tindak Lanjut *</label>
+                    <textarea id="plenoIsi" required rows="3" placeholder="Uraikan keputusan rapat pleno yang harus ditindaklanjuti..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">PIC Penanggung Jawab *</label>
+                        <input type="text" id="plenoPic" required placeholder="Nama Pejabat / Staf" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Email Penerima Notifikasi *</label>
+                        <input type="email" id="plenoEmail" required placeholder="nama@bojonegoro.bawaslu.go.id" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Divisi Terkait *</label>
+                        <select id="plenoDivisi" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="SDMO & Diklat">SDMO & Diklat</option>
+                            <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                            <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                            <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Batas Waktu (Tenggat) *</label>
+                        <input type="date" id="plenoDeadline" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalPleno')" class="px-3.5 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-white font-semibold">Simpan & Kirim Email Penugasan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

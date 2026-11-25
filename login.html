@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masuk Sistem — SEKATA Bawaslu Kabupaten Bojonegoro</title>
+    <link rel="icon" type="image/png" href="assets/img/logo-bawaslu.png">
+    <script>
+        (function () {
+            var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.documentElement.classList.add(reduced ? 'js-intro-reduced' : 'js-intro-active');
+            window.__sekataIntroWatchdog = setTimeout(function () {
+                document.documentElement.classList.add('intro-revealed', 'intro-done');
+                var curtain = document.getElementById('loginIntroCurtain');
+                if (curtain) {
+                    curtain.classList.add('is-leaving', 'is-finished');
+                    curtain.setAttribute('aria-hidden', 'true');
+                }
+            }, 1450);
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body class="login-page bg-[#F6F7F9] text-slate-900 min-h-screen flex flex-col">
+
+    <!-- PRE-LOGIN CEREMONIAL CURTAIN -->
+    <div id="loginIntroCurtain" class="login-intro-curtain" role="dialog" aria-label="Pembukaan Ruang Kerja SEKATA">
+        <div class="intro-curtain-content">
+            <div class="intro-seal-wrap">
+                <img src="assets/img/logo-bawaslu.png" alt="Logo Bawaslu Kabupaten Bojonegoro">
+            </div>
+            <div class="intro-horizon-line" aria-hidden="true"></div>
+            <div class="intro-wordmark">
+                <p class="intro-wordmark-title">SEKATA</p>
+                <p class="intro-wordmark-sub">Bawaslu Kabupaten Bojonegoro</p>
+            </div>
+        </div>
+        <button type="button" id="btnSkipIntro" class="intro-skip-btn" onclick="dismissIntroCurtain(true)">
+            Lewati (Esc)
+        </button>
+    </div>
+
+    <div class="bawaslu-top-stripe"></div>
+
+    <div class="login-shell flex-1 flex flex-col lg:flex-row">
+        <!-- LEFT INSTITUTIONAL BRAND PANE -->
+        <div class="login-brand-pane lg:w-[44%] bg-[#0F172A] text-white p-5 sm:p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
+            <div class="relative z-10 flex items-center gap-4">
+                <div class="w-16 h-16 sm:w-[76px] sm:h-[76px] rounded-xl logo-badge p-1.5 border border-slate-200/30 flex items-center justify-center shrink-0 shadow-sm">
+                    <img src="assets/img/logo-bawaslu.png" alt="Logo Bawaslu Bojonegoro" class="w-full h-full object-contain">
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold tracking-wider text-amber-300 uppercase">Badan Pengawas Pemilihan Umum</p>
+                    <p class="text-sm font-medium text-slate-200 mt-0.5">Kabupaten Bojonegoro</p>
+                </div>
+            </div>
+
+            <div class="relative z-10 mt-5 mb-1 lg:my-0 space-y-2.5 lg:space-y-3">
+                <h1 class="text-3xl lg:text-4xl font-bold tracking-tight leading-[1.1] text-white">
+                    SEKATA
+                </h1>
+                <p class="text-sm sm:text-base text-slate-200 font-normal leading-relaxed max-w-sm">
+                    Sistem Elektronik Keputusan Pleno & Tata Kelola Anggaran
+                </p>
+            </div>
+
+            <div class="hidden lg:flex relative z-10 pt-5 border-t border-white/10 items-center justify-between text-[11px] text-slate-400">
+                <span>Jl. Pahlawan No. 7, Kadipaten, Bojonegoro</span>
+                <span class="font-mono text-slate-300">v4.0-PARIPURNA</span>
+            </div>
+        </div>
+
+        <!-- RIGHT AUTHENTICATION PANE -->
+        <main class="login-form-pane flex-1 flex items-center justify-center p-3.5 sm:p-8 lg:p-12">
+            <div class="login-form-card w-full">
+                <div class="login-reveal-item mb-5" style="--reveal-delay: 0ms;">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">Masuk ke Ruang Kerja</h2>
+                    <p class="text-xs text-slate-600 mt-1">Gunakan akun kedinasan Bawaslu Kabupaten Bojonegoro.</p>
+                </div>
+
+                <!-- NETWORK OFFLINE / RECOVERED BANNER -->
+                <div id="networkStatusBanner" class="login-alert is-offline is-hidden mb-4" role="status" aria-live="polite">
+                    <span id="networkStatusIcon" class="shrink-0 mt-0.5" aria-hidden="true"></span>
+                    <div class="login-alert-body">
+                        <p id="networkStatusTitle" class="login-alert-title">Jaringan Internet Terputus</p>
+                        <p id="networkStatusDesc" class="login-alert-desc">
+                            Perangkat sedang offline. Koneksi ke server autentikasi SEKATA tidak tersedia saat ini.
+                        </p>
+                        <div id="networkStatusActions" class="login-alert-actions">
+                            <button type="button" id="btnRetryConnection" onclick="checkNetworkAndServer()" class="login-action-btn">
+                                Periksa Ulang Koneksi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AUTHENTICATION / SERVER ERROR BANNER -->
+                <div id="loginErrorBanner" class="login-alert is-error is-hidden mb-4" role="alert" aria-live="assertive">
+                    <span class="shrink-0 mt-0.5" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </span>
+                    <div class="login-alert-body">
+                        <p id="loginErrorTitle" class="login-alert-title">Gagal Masuk ke Sistem</p>
+                        <p id="loginErrorDesc" class="login-alert-desc">Periksa kembali email dan kata sandi Anda.</p>
+                        <div id="loginErrorActions" class="login-alert-actions is-hidden">
+                            <button type="button" onclick="retrySubmitLogin()" class="login-action-btn is-solid-danger">
+                                Coba Lagi
+                            </button>
+                            <button type="button" onclick="enterLocalSimulationMode()" class="login-action-btn">
+                                Masuk Mode Simulasi Lokal (Offline)
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="clearLoginError()" aria-label="Tutup pesan kesalahan" class="shrink-0 p-1 rounded hover:bg-rose-200/50 text-rose-900">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" novalidate class="space-y-4">
+                    <div class="login-reveal-item" style="--reveal-delay: 45ms;">
+                        <label for="loginEmail" class="block text-xs font-semibold text-slate-700 mb-1.5">Email Kedinasan</label>
+                        <input type="email" id="loginEmail" required autocomplete="email" value="sekretariat@bojonegoro.bawaslu.go.id"
+                            aria-describedby="emailFieldError"
+                            class="login-field-control w-full px-3.5 py-2.5 text-base sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none">
+                        <p id="emailFieldError" class="login-field-error hidden" role="alert"></p>
+                    </div>
+
+                    <div class="login-reveal-item" style="--reveal-delay: 90ms;">
+                        <label for="loginPassword" class="block text-xs font-semibold text-slate-700 mb-1.5">Kata Sandi</label>
+                        <div class="relative">
+                            <input type="password" id="loginPassword" required autocomplete="current-password" value="Bawaslu2026!"
+                                aria-describedby="passwordFieldError capsLockHint"
+                                class="login-field-control w-full pl-3.5 pr-10 py-2.5 text-base sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none">
+                            <button type="button" id="togglePasswordBtn" onclick="togglePasswordVisibility()"
+                                aria-label="Tampilkan kata sandi" aria-pressed="false"
+                                class="login-eye-btn absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-800 rounded-r-lg">
+                                <svg id="iconEyeOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg id="iconEyeClosed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="passwordFieldError" class="login-field-error hidden" role="alert"></p>
+                        <p id="capsLockHint" class="login-caps-hint hidden">Tombol Caps Lock sedang aktif.</p>
+                    </div>
+
+                    <div class="login-reveal-item pt-1" style="--reveal-delay: 135ms;">
+                        <button type="submit" id="loginSubmitBtn" class="login-submit-btn">
+                            <span id="loginSubmitLabel">Masuk ke Ruang Kerja</span>
+                            <span id="loginSubmitIcon" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <details class="login-sim-panel login-reveal-item" style="--reveal-delay: 170ms;">
+                        <summary class="login-sim-summary">
+                            <svg class="login-sim-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                            <span>Opsi simulasi peran lokal</span>
+                        </summary>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                            <div>
+                                <label for="loginRole" class="block text-xs font-semibold text-slate-700 mb-1.5">Peran Akses</label>
+                                <select id="loginRole" onchange="syncRoleDefaults()" class="login-field-control w-full px-3 py-2 text-base sm:text-xs bg-white border border-slate-300 rounded-lg font-medium text-slate-800 focus:outline-none">
+                                    <option value="Admin">Administrator Sistem</option>
+                                    <option value="Pimpinan">Pimpinan Bawaslu</option>
+                                    <option value="Kordiv">Koordinator Divisi</option>
+                                    <option value="PIC">PIC / Staf Pelaksana</option>
+                                    <option value="Operator">Operator Data RENJA</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="loginDivisi" class="block text-xs font-semibold text-slate-700 mb-1.5">Unit / Divisi</label>
+                                <select id="loginDivisi" class="login-field-control w-full px-3 py-2 text-base sm:text-xs bg-white border border-slate-300 rounded-lg font-medium text-slate-800 focus:outline-none">
+                                    <option value="ALL">Lintas Divisi (Semua)</option>
+                                    <option value="Pencegahan & Parmas">Pencegahan & Parmas</option>
+                                    <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
+                                    <option value="SDMO & Diklat">SDMO & Diklat</option>
+                                    <option value="Hukum & Penyelesaian Sengketa">Hukum & Sengketa</option>
+                                    <option value="Sekretariat">Sekretariat</option>
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        var ICON_WIFI_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+        var ICON_WIFI_OK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+        var ICON_ARROW = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+        var ICON_SPINNER = '<svg class="login-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>';
+
+        var introDismissed = false;
+        var onlineNoticeTimer = null;
+
+        function finishIntroCleanup() {
+            var curtain = document.getElementById('loginIntroCurtain');
+            if (curtain) {
+                curtain.classList.add('is-finished');
+                curtain.setAttribute('aria-hidden', 'true');
+            }
+            document.documentElement.classList.add('intro-done');
+            if (window.__sekataIntroWatchdog) {
+                clearTimeout(window.__sekataIntroWatchdog);
+            }
+        }
+
+        function dismissIntroCurtain(instant) {
+            if (introDismissed) return;
+            introDismissed = true;
+            var curtain = document.getElementById('loginIntroCurtain');
+            document.documentElement.classList.add('intro-revealed');
+            if (!curtain) {
+                finishIntroCleanup();
+                return;
+            }
+            curtain.classList.add('is-leaving');
+            curtain.setAttribute('aria-hidden', 'true');
+            if (instant) {
+                setTimeout(finishIntroCleanup, 240);
+            } else {
+                setTimeout(finishIntroCleanup, 450);
+            }
+        }
+
+        (function initPreLoginMotion() {
+            var isReduced = document.documentElement.classList.contains('js-intro-reduced');
+            var curtain = document.getElementById('loginIntroCurtain');
+            if (!curtain) return;
+
+            curtain.addEventListener('click', function (ev) {
+                if (ev.target && ev.target.id === 'btnSkipIntro') return;
+                dismissIntroCurtain(true);
+            });
+
+            document.addEventListener('keydown', function onKey(ev) {
+                if (introDismissed) {
+                    document.removeEventListener('keydown', onKey);
+                    return;
+                }
+                if (ev.key === 'Escape' || ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    dismissIntroCurtain(true);
+                    document.removeEventListener('keydown', onKey);
+                }
+            });
+
+            setTimeout(function () {
+                dismissIntroCurtain(false);
+            }, isReduced ? 120 : 400);
+        })();
+
+        function setFieldError(inputId, errorId, message) {
+            var input = document.getElementById(inputId);
+            var errEl = document.getElementById(errorId);
+            if (!input || !errEl) return;
+            if (message) {
+                input.classList.add('has-error');
+                input.setAttribute('aria-invalid', 'true');
+                errEl.textContent = message;
+                errEl.classList.remove('hidden');
+            } else {
+                input.classList.remove('has-error');
+                input.removeAttribute('aria-invalid');
+                errEl.textContent = '';
+                errEl.classList.add('hidden');
+            }
+        }
+
+        function showLoginError(title, desc, showOfflineActions) {
+            var banner = document.getElementById('loginErrorBanner');
+            var titleEl = document.getElementById('loginErrorTitle');
+            var descEl = document.getElementById('loginErrorDesc');
+            var actionsEl = document.getElementById('loginErrorActions');
+            if (!banner) return;
+
+            titleEl.textContent = title;
+            descEl.textContent = desc;
+            if (showOfflineActions) {
+                actionsEl.classList.remove('is-hidden');
+            } else {
+                actionsEl.classList.add('is-hidden');
+            }
+
+            banner.classList.remove('is-hidden', 'is-shaking');
+            void banner.offsetWidth;
+            banner.classList.add('is-shaking');
+        }
+
+        function clearLoginError() {
+            var banner = document.getElementById('loginErrorBanner');
+            if (banner) {
+                banner.classList.add('is-hidden');
+                banner.classList.remove('is-shaking');
+            }
+        }
+
+        function updateNetworkBanner(isOffline, customMessage) {
+            var banner = document.getElementById('networkStatusBanner');
+            var iconEl = document.getElementById('networkStatusIcon');
+            var titleEl = document.getElementById('networkStatusTitle');
+            var descEl = document.getElementById('networkStatusDesc');
+            var actionsEl = document.getElementById('networkStatusActions');
+            if (!banner) return;
+
+            if (onlineNoticeTimer) {
+                clearTimeout(onlineNoticeTimer);
+                onlineNoticeTimer = null;
+            }
+
+            if (isOffline) {
+                banner.classList.remove('is-hidden', 'is-online');
+                banner.classList.add('is-offline');
+                iconEl.innerHTML = ICON_WIFI_OFF;
+                titleEl.textContent = 'Jaringan Internet Terputus';
+                descEl.textContent = customMessage || 'Perangkat sedang offline. Koneksi ke server autentikasi SEKATA tidak tersedia saat ini.';
+                actionsEl.classList.remove('is-hidden');
+            } else {
+                banner.classList.remove('is-hidden', 'is-offline');
+                banner.classList.add('is-online');
+                iconEl.innerHTML = ICON_WIFI_OK;
+                titleEl.textContent = 'Koneksi Internet Tersambung';
+                descEl.textContent = 'Jaringan telah pulih. Anda dapat melanjutkan proses masuk ke sistem.';
+                actionsEl.classList.add('is-hidden');
+                onlineNoticeTimer = setTimeout(function () {
+                    banner.classList.add('is-hidden');
+                }, 2800);
+            }
+        }
+
+        async function checkNetworkAndServer() {
+            var btn = document.getElementById('btnRetryConnection');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Memeriksa...';
+            }
+
+            if (!navigator.onLine) {
+                updateNetworkBanner(true, 'Perangkat masih terdeteksi offline. Pastikan Wi-Fi atau koneksi jaringan Anda aktif.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Periksa Ulang Koneksi';
+                }
+                return;
+            }
+
+            try {
+                var controller = new AbortController();
+                var tid = setTimeout(function () { controller.abort(); }, 5000);
+                var ping = await fetch('backend/api/auth.php', { method: 'GET', cache: 'no-store', signal: controller.signal });
+                clearTimeout(tid);
+                if (ping.ok) {
+                    updateNetworkBanner(false);
+                    clearLoginError();
+                } else {
+                    updateNetworkBanner(true, 'Internet terhubung, namun server autentikasi merespons kode ' + ping.status + '.');
+                }
+            } catch (_) {
+                updateNetworkBanner(true, 'Internet terhubung, tetapi server PHP backend tidak terjangkau saat ini. Anda masih dapat memakai Mode Simulasi Lokal.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Periksa Ulang Koneksi';
+                }
+            }
+        }
+
+        window.addEventListener('offline', function () {
+            updateNetworkBanner(true);
+        });
+        window.addEventListener('online', function () {
+            updateNetworkBanner(false);
+            clearLoginError();
+        });
+        if (!navigator.onLine) {
+            updateNetworkBanner(true);
+        }
+
+        function setSubmitLoading(loading, labelText) {
+            var btn = document.getElementById('loginSubmitBtn');
+            var label = document.getElementById('loginSubmitLabel');
+            var icon = document.getElementById('loginSubmitIcon');
+            if (!btn || !label || !icon) return;
+            btn.disabled = loading;
+            label.textContent = labelText || (loading ? 'Memeriksa Kredensial...' : 'Masuk ke Ruang Kerja');
+            icon.innerHTML = loading ? ICON_SPINNER : ICON_ARROW;
+        }
+
+        function togglePasswordVisibility() {
+            var input = document.getElementById('loginPassword');
+            var btn = document.getElementById('togglePasswordBtn');
+            var eyeOpen = document.getElementById('iconEyeOpen');
+            var eyeClosed = document.getElementById('iconEyeClosed');
+            if (!input || !btn) return;
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.setAttribute('aria-label', isHidden ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+            btn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+            if (eyeOpen && eyeClosed) {
+                eyeOpen.classList.toggle('hidden', isHidden);
+                eyeClosed.classList.toggle('hidden', !isHidden);
+            }
+        }
+
+        var pwInput = document.getElementById('loginPassword');
+        var emailInput = document.getElementById('loginEmail');
+        if (pwInput) {
+            pwInput.addEventListener('keyup', function (ev) {
+                var hint = document.getElementById('capsLockHint');
+                if (hint && ev.getModifierState) {
+                    hint.classList.toggle('hidden', !ev.getModifierState('CapsLock'));
+                }
+            });
+            pwInput.addEventListener('input', function () {
+                setFieldError('loginPassword', 'passwordFieldError', '');
+            });
+        }
+        if (emailInput) {
+            emailInput.addEventListener('input', function () {
+                setFieldError('loginEmail', 'emailFieldError', '');
+            });
+        }
+
+        var DEMO_EMAILS = [
+            'sekretariat@bojonegoro.bawaslu.go.id',
+            'pimpinan@bojonegoro.bawaslu.go.id',
+            'kordiv.pp@bojonegoro.bawaslu.go.id',
+            'fauzi@bojonegoro.bawaslu.go.id'
+        ];
+
+        function syncRoleDefaults() {
+            var role = document.getElementById('loginRole').value;
+            var divEl = document.getElementById('loginDivisi');
+            var emailEl = document.getElementById('loginEmail');
+            var emailMap = {
+                Admin: 'sekretariat@bojonegoro.bawaslu.go.id',
+                Pimpinan: 'pimpinan@bojonegoro.bawaslu.go.id',
+                Kordiv: 'kordiv.pp@bojonegoro.bawaslu.go.id',
+                PIC: 'fauzi@bojonegoro.bawaslu.go.id',
+                Operator: 'sekretariat@bojonegoro.bawaslu.go.id'
+            };
+            var divMap = {
+                Admin: 'ALL',
+                Pimpinan: 'ALL',
+                Kordiv: 'Pencegahan & Parmas',
+                PIC: 'Pencegahan & Parmas',
+                Operator: 'Sekretariat'
+            };
+            if (divEl && divMap[role]) {
+                divEl.value = divMap[role];
+            }
+            if (emailEl && DEMO_EMAILS.indexOf(emailEl.value.trim()) !== -1 && emailMap[role]) {
+                emailEl.value = emailMap[role];
+            }
+        }
+
+        function navigateToWorkspace() {
+            setSubmitLoading(true, 'Membuka Ruang Kerja...');
+            document.body.classList.add('is-navigating-out');
+            setTimeout(function () {
+                window.location.href = 'index.html';
+            }, 220);
+        }
+
+        function enterLocalSimulationMode() {
+            var email = document.getElementById('loginEmail').value.trim();
+            var role = document.getElementById('loginRole').value;
+            var divisi = document.getElementById('loginDivisi').value;
+            localStorage.setItem('sekata_pro_role', role);
+            localStorage.setItem('sekata_pro_email', email || 'simulasi@bojonegoro.bawaslu.go.id');
+            localStorage.setItem('sekata_pro_divisi', divisi);
+            localStorage.setItem('sekata_auth_mode', 'offline_simulation');
+            navigateToWorkspace();
+        }
+
+        function retrySubmitLogin() {
+            var form = document.getElementById('loginForm');
+            if (form) {
+                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            clearLoginError();
+
+            var email = document.getElementById('loginEmail').value.trim();
+            var password = document.getElementById('loginPassword').value;
+            var hasFieldError = false;
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                setFieldError('loginEmail', 'emailFieldError', 'Masukkan alamat email kedinasan yang valid.');
+                hasFieldError = true;
+            } else {
+                setFieldError('loginEmail', 'emailFieldError', '');
+            }
+
+            if (!password) {
+                setFieldError('loginPassword', 'passwordFieldError', 'Kata sandi wajib diisi sebelum masuk.');
+                hasFieldError = true;
+            } else {
+                setFieldError('loginPassword', 'passwordFieldError', '');
+            }
+
+            if (hasFieldError) {
+                showLoginError('Data Belum Lengkap', 'Periksa kembali kolom yang ditandai merah di bawah ini.', false);
+                var firstErr = document.querySelector('.login-field-control.has-error');
+                if (firstErr) firstErr.focus();
+                return;
+            }
+
+            if (!navigator.onLine) {
+                updateNetworkBanner(true);
+                showLoginError(
+                    'Tidak Ada Koneksi Internet',
+                    'Perangkat Anda sedang offline sehingga verifikasi server tidak dapat dilakukan. Periksa jaringan atau gunakan mode simulasi lokal.',
+                    true
+                );
+                return;
+            }
+
+            setSubmitLoading(true, 'Memeriksa Kredensial...');
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
+
+            try {
+                var res = await fetch('backend/api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email: email, password: password }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                var data = null;
+                try {
+                    data = await res.json();
+                } catch (_) {
+                    data = null;
+                }
+
+                if (res.ok && data && data.status === 'ok') {
+                    var mappedDivisi = (data.user.nama_divisi && data.user.nama_divisi !== 'Lintas Divisi')
+                        ? data.user.nama_divisi
+                        : 'ALL';
+                    localStorage.setItem('sekata_pro_role', data.user.role);
+                    localStorage.setItem('sekata_pro_email', data.user.email);
+                    localStorage.setItem('sekata_pro_divisi', mappedDivisi);
+                    localStorage.setItem('sekata_csrf', data.csrf_token || '');
+                    localStorage.setItem('sekata_auth_mode', 'server');
+                    navigateToWorkspace();
+                    return;
+                }
+
+                if (res.status === 401) {
+                    setSubmitLoading(false);
+                    setFieldError('loginPassword', 'passwordFieldError', 'Kata sandi atau email tidak cocok.');
+                    showLoginError(
+                        'Email atau Kata Sandi Tidak Valid',
+                        (data && data.message) ? data.message : 'Pastikan email kedinasan dan kata sandi sudah benar.',
+                        false
+                    );
+                    document.getElementById('loginPassword').focus();
+                    return;
+                }
+
+                if (res.status === 403) {
+                    setSubmitLoading(false);
+                    showLoginError(
+                        'Akses Akun Ditolak',
+                        (data && data.message) ? data.message : 'Akun Anda berstatus nonaktif atau tidak memiliki hak akses.',
+                        false
+                    );
+                    return;
+                }
+
+                setSubmitLoading(false);
+                showLoginError(
+                    'Server Mengalami Kendala (' + res.status + ')',
+                    (data && data.message) ? data.message : 'Layanan autentikasi sedang tidak tersedia. Coba sesaat lagi atau gunakan simulasi lokal.',
+                    true
+                );
+            } catch (err) {
+                clearTimeout(timeoutId);
+                setSubmitLoading(false);
+                var isTimeout = err && err.name === 'AbortError';
+                if (!navigator.onLine) {
+                    updateNetworkBanner(true);
+                }
+                showLoginError(
+                    isTimeout ? 'Waktu Permintaan Habis' : 'Server Autentikasi Tidak Terjangkau',
+                    isTimeout
+                        ? 'Koneksi ke server terlalu lambat (lebih dari 8 detik). Periksa jaringan lalu coba lagi.'
+                        : 'Tidak dapat menghubungi backend PHP/server SEKATA (koneksi terputus atau dijalankan statis tanpa server).',
+                    true
+                );
+            }
+        }
+    </script>
+</body>
+</html>

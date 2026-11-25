@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Keaslian Dokumen — SEKATA Bawaslu Kabupaten Bojonegoro</title>
+    <link rel="icon" type="image/png" href="assets/img/logo-bawaslu.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body class="verify-page bg-[#F6F7F9] text-slate-900 min-h-screen flex flex-col">
+    <div class="bawaslu-top-stripe no-print"></div>
+
+    <main class="verify-main flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div class="verify-card max-w-lg w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="verify-header bg-[#0F172A] text-white p-6 flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl logo-badge p-1.5 flex items-center justify-center shrink-0 border border-slate-200/30 shadow-sm">
+                    <img src="assets/img/logo-bawaslu.png" alt="Logo Bawaslu Bojonegoro" class="w-full h-full object-contain">
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-300">Badan Pengawas Pemilihan Umum</p>
+                    <h1 class="text-base sm:text-lg font-semibold leading-snug text-white">Validasi Dokumen Elektronik SEKATA</h1>
+                    <p class="text-xs text-slate-300 mt-0.5">Kabupaten Bojonegoro</p>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-5 text-xs">
+                <!-- VALID / INVALID STATUS BOX -->
+                <div id="verifyStatusBox" class="verify-status-box is-valid" role="status" aria-live="polite">
+                    <span id="verifyStatusIcon" class="shrink-0 mt-0.5" aria-hidden="true"></span>
+                    <div class="min-w-0">
+                        <p id="verifyStatusTitle" class="font-bold text-sm">Memeriksa Parameter Dokumen...</p>
+                        <p id="verifyStatusDesc" class="mt-0.5 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <!-- DOCUMENT DETAILS -->
+                <div class="space-y-2.5 border-t border-b border-slate-200/80 py-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-slate-500">Nomor Sidik Jari Dokumen</span>
+                        <span id="verId" class="font-mono font-bold text-slate-900 text-right break-all">-</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-slate-500">Tahun Anggaran</span>
+                        <span id="verTa" class="font-mono font-semibold text-slate-800">-</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-slate-500">Total Pagu Tercatat</span>
+                        <span id="verPagu" class="font-mono font-semibold text-slate-900 tabular-nums">-</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-slate-500">Realisasi Terserap</span>
+                        <span id="verSerapan" class="font-mono font-semibold text-emerald-700 tabular-nums">-</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-slate-500">Persentase Serapan</span>
+                        <span id="verPersen" class="font-mono font-semibold text-slate-800 tabular-nums">-</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-slate-500">Unit Penerbit</span>
+                        <span class="font-semibold text-slate-800 text-right">Sekretariat Bawaslu Kab. Bojonegoro</span>
+                    </div>
+                </div>
+
+                <!-- ACTION BAR -->
+                <div id="verifyActionBar" class="flex flex-wrap items-center gap-2 no-print">
+                    <button type="button" id="btnCopyHash" onclick="copyDocHash()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span id="copyHashLabel">Salin ID Dokumen</span>
+                    </button>
+                    <button type="button" id="btnPrintVerify" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#881337] hover:bg-[#700F2D] text-white font-semibold transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect x="6" y="14" width="12" height="8"></rect>
+                        </svg>
+                        <span>Cetak Bukti Validasi</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 no-print">
+                    <a href="index.html" class="inline-flex items-center gap-1.5 text-[#881337] hover:text-[#700F2D] font-semibold">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Kembali ke Ruang Kerja SEKATA</span>
+                    </a>
+                    <span class="font-mono text-[10px] text-slate-400">v4.0-PARIPURNA</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        var ICON_CHECK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+        var ICON_WARN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+
+        var params = new URLSearchParams(window.location.search);
+        var rawId = (params.get('id') || '').trim();
+        var rawTa = (params.get('ta') || '').trim();
+        var rawPagu = params.get('pagu');
+        var rawSerapan = params.get('serapan');
+
+        var hasValidId = /^BWS-BJN-[A-Z0-9-]{6,}$/i.test(rawId);
+        var paguNum = rawPagu !== null && rawPagu !== '' ? Number(rawPagu) : NaN;
+        var serapanNum = rawSerapan !== null && rawSerapan !== '' ? Number(rawSerapan) : NaN;
+        var hasValidNumbers = Number.isFinite(paguNum) && paguNum >= 0 && Number.isFinite(serapanNum) && serapanNum >= 0;
+        var hasValidTa = /^\d{4}$/.test(rawTa);
+        var isAuthentic = hasValidId && hasValidNumbers && hasValidTa;
+
+        var fmt = function (v) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(v);
+        };
+
+        var statusBox = document.getElementById('verifyStatusBox');
+        var statusIcon = document.getElementById('verifyStatusIcon');
+        var statusTitle = document.getElementById('verifyStatusTitle');
+        var statusDesc = document.getElementById('verifyStatusDesc');
+
+        if (isAuthentic) {
+            statusBox.className = 'verify-status-box is-valid';
+            statusIcon.innerHTML = ICON_CHECK;
+            statusTitle.textContent = 'DOKUMEN TERVERIFIKASI SAH';
+            statusDesc.textContent = 'Dokumen cetak ini resmi diterbitkan melalui sistem internal SEKATA Bawaslu Kabupaten Bojonegoro.';
+
+            var pct = paguNum > 0 ? ((serapanNum / paguNum) * 100).toFixed(1) : '0.0';
+            document.getElementById('verId').textContent = rawId;
+            document.getElementById('verTa').textContent = 'TA ' + rawTa;
+            document.getElementById('verPagu').textContent = fmt(paguNum);
+            document.getElementById('verSerapan').textContent = fmt(serapanNum);
+            document.getElementById('verPersen').textContent = pct + '%';
+        } else {
+            statusBox.className = 'verify-status-box is-invalid';
+            statusIcon.innerHTML = ICON_WARN;
+            statusTitle.textContent = rawId ? 'PARAMETER VALIDASI TIDAK VALID' : 'DATA QR DOKUMEN TIDAK DITEMUKAN';
+            statusDesc.textContent = rawId
+                ? 'Kode register atau nominal pada tautan tidak lengkap/tidak sesuai standar SEKATA (BWS-BJN-...). Pindai ulang QR pada lembar laporan cetak resmi.'
+                : 'Halaman ini dibuka tanpa parameter QR dari dokumen cetak resmi. Pindai kode QR pada laporan RENJA atau Pleno untuk memverifikasi keasliannya.';
+
+            document.getElementById('verId').textContent = rawId || 'Belum ada ID dokumen';
+            document.getElementById('verTa').textContent = hasValidTa ? ('TA ' + rawTa) : '-';
+            document.getElementById('verPagu').textContent = '-';
+            document.getElementById('verSerapan').textContent = '-';
+            document.getElementById('verPersen').textContent = '-';
+            document.getElementById('btnCopyHash').disabled = !rawId;
+            document.getElementById('btnCopyHash').classList.toggle('opacity-50', !rawId);
+            document.getElementById('btnPrintVerify').disabled = true;
+            document.getElementById('btnPrintVerify').classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        function copyDocHash() {
+            if (!rawId) return;
+            var label = document.getElementById('copyHashLabel');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(rawId).then(function () {
+                    label.textContent = 'ID Tersalin';
+                    setTimeout(function () { label.textContent = 'Salin ID Dokumen'; }, 2000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

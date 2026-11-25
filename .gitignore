@@ -1,0 +1,15 @@
+# Runtime uploads & temporary exports
+uploads/
+*.sql.bak
+*.log
+
+# Environment overrides
+.env
+backend/config.local.php
+
+# IDE, AI tooling & OS artifacts
+.impeccable/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
